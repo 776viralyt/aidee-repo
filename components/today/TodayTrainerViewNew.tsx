@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Dimensions,
-  RefreshControl,
   Modal,
   TextInput,
   Alert,
@@ -48,6 +46,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme, getColors } from '../../hooks/useColorScheme';
 import { router } from 'expo-router';
+import PullToRefresh from '../ui/PullToRefresh';
 import {
   getEnhancedTrainerStats,
   getEnhancedActiveClients,
@@ -109,6 +108,7 @@ export default function TodayTrainerViewNew() {
         getClientActivityLog(undefined, 10)
       ]);
 
+      console.log('Trainer Stats:', stats); // Debug log to check data
       setTrainerStats(stats);
       setActiveClients(clients);
       setTodaySessions(todaySessionsData);
@@ -261,13 +261,7 @@ export default function TodayTrainerViewNew() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
+      <PullToRefresh onRefresh={handleRefresh} refreshing={refreshing}>
         {/* Enhanced Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -346,10 +340,6 @@ export default function TodayTrainerViewNew() {
             </View>
             <Text style={styles.statNumber}>{trainerStats?.total_clients || 0}</Text>
             <Text style={styles.statLabel}>Total Clients</Text>
-            <View style={styles.statTrend}>
-              <TrendingUp size={12} color={colors.success} />
-              <Text style={styles.statTrendText}>+2 this week</Text>
-            </View>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.statCard} onPress={handleViewAllSessions}>
@@ -360,10 +350,6 @@ export default function TodayTrainerViewNew() {
               {trainerStats?.avg_session_rating ? trainerStats.avg_session_rating.toFixed(1) : '0.0'}
             </Text>
             <Text style={styles.statLabel}>Avg Rating</Text>
-            <View style={styles.statTrend}>
-              <TrendingUp size={12} color={colors.success} />
-              <Text style={styles.statTrendText}>+0.2 this month</Text>
-            </View>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statCard} onPress={() => router.push('/trainer/analytics')}>
@@ -372,10 +358,6 @@ export default function TodayTrainerViewNew() {
             </View>
             <Text style={styles.statNumber}>{trainerStats?.weekly_sessions || 0}</Text>
             <Text style={styles.statLabel}>Weekly Sessions</Text>
-            <View style={styles.statTrend}>
-              <TrendingUp size={12} color={colors.success} />
-              <Text style={styles.statTrendText}>+15% vs last week</Text>
-            </View>
           </TouchableOpacity>
         </View>
 
@@ -644,7 +626,7 @@ export default function TodayTrainerViewNew() {
         </View>
 
         <View style={{ height: 100 }} />
-      </ScrollView>
+      </PullToRefresh>
 
       {/* Floating Action Button */}
       <TouchableOpacity style={styles.fab} onPress={handleNewSession}>
@@ -666,7 +648,7 @@ export default function TodayTrainerViewNew() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.notificationsList}>
+          <PullToRefresh onRefresh={handleRefresh} refreshing={refreshing}>
             {notifications.length === 0 ? (
               <View style={styles.emptyNotifications}>
                 <Bell size={48} color={colors.textTertiary} />
@@ -696,7 +678,7 @@ export default function TodayTrainerViewNew() {
                 </TouchableOpacity>
               ))
             )}
-          </ScrollView>
+          </PullToRefresh>
         </SafeAreaView>
       </Modal>
 
@@ -715,7 +697,7 @@ export default function TodayTrainerViewNew() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.activityList}>
+          <PullToRefresh onRefresh={handleRefresh} refreshing={refreshing}>
             {clientActivity.length === 0 ? (
               <View style={styles.emptyActivity}>
                 <Activity size={48} color={colors.textTertiary} />
@@ -736,7 +718,7 @@ export default function TodayTrainerViewNew() {
                 </View>
               ))
             )}
-          </ScrollView>
+          </PullToRefresh>
         </SafeAreaView>
       </Modal>
 
@@ -819,9 +801,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: colors.textSecondary,
-  },
-  scrollView: {
-    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -982,16 +961,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 8,
-  },
-  statTrend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statTrendText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 10,
-    color: colors.success,
   },
   card: {
     backgroundColor: colors.surface,
@@ -1348,10 +1317,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  notificationsList: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
   emptyNotifications: {
     alignItems: 'center',
     paddingVertical: 60,
@@ -1369,6 +1334,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginVertical: 4,
+    marginHorizontal: 20,
   },
   unreadNotification: {
     backgroundColor: colors.primary + '10',
@@ -1410,10 +1376,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 4,
   },
-  activityList: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
   emptyActivity: {
     alignItems: 'center',
     paddingVertical: 60,
@@ -1431,6 +1393,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginVertical: 4,
+    marginHorizontal: 20,
   },
   activityIcon: {
     width: 32,
